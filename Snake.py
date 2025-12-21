@@ -3,11 +3,10 @@ import random
 
 class Snake:
     def __init__(self, squares):
-        
         startX = random.randint(1, squares - 2)
         startY = random.randint(1, squares - 2)
 
-        self.snake = [(startX,     startY),
+        self.segments = [(startX,     startY),
                       (startX - 1, startY),
                       (startX - 2, startY)]
         
@@ -15,7 +14,7 @@ class Snake:
         self.shouldGrow = False
 
     def move(self):
-        headX, headY = self.snake[0]
+        headX, headY = self.segments[0]
         
         if self.direction == "UP":
             newHead = (headX, headY - 1)
@@ -26,9 +25,9 @@ class Snake:
         elif self.direction == "RIGHT":
             newHead = (headX + 1, headY)
         
-        self.snake.insert(0, newHead)
+        self.segments.insert(0, newHead)
         if not self.shouldGrow:
-            self.snake.pop()
+            self.segments.pop()
         else:
             self.shouldGrow = False
     
