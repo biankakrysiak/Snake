@@ -15,7 +15,6 @@ def main():
     p.display.set_caption('Snake')
     clock = p.time.Clock()
 
-
     running = True
     while running:
         score = runGame(screen, clock)
