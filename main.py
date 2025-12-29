@@ -3,26 +3,28 @@ import random
 from Snake import Snake
 from Food import Food
 
-WIDTH = 1024
-HEIGHT = 1024
+WIDTH = 800
+HEIGHT = 800
 SQUARES = 32  # macierz 32x32
 SQR_SIZE = HEIGHT // SQUARES
-FPS = 10
+FPS = 6
 
 def main():
     p.init()
     screen = p.display.set_mode((WIDTH, HEIGHT))
     p.display.set_caption('Snake')
     clock = p.time.Clock()
+    foodImg = p.transform.scale(p.image.load("img/food.png"), (SQR_SIZE,SQR_SIZE))
+    background = p.transform.scale(p.image.load("img/grid.jpg"), (WIDTH, HEIGHT))
 
     running = True
     while running:
-        score = runGame(screen, clock)
+        score = runGame(screen, clock, foodImg, background)
         print("Twój wynik:", score)
         running = False
     p.quit()
 
-def runGame(screen, clock):
+def runGame(screen, clock, foodImg, background):
     snake = Snake(SQUARES)
     food = Food(SQUARES, snake.segments)
     score = 0
@@ -55,21 +57,21 @@ def runGame(screen, clock):
         if snake.segments[0] in snake.segments[1:]: # snake collision
             running = False
 
-        draw(screen, snake, food)
+        draw(screen, snake, food, foodImg, background)
         clock.tick(FPS)
 
     return score
 
 
 
-def draw(screen, snake, food):
-    screen.fill(p.Color("white"))
+def draw(screen, snake, food, foodImg, background):
+    screen.blit(background, (0,0))
 
     fx, fy = food.position
-    p.draw.rect(screen, p.Color("red"), (fx*SQR_SIZE, fy*SQR_SIZE, SQR_SIZE, SQR_SIZE))
+    screen.blit(foodImg, (fx*SQR_SIZE, fy*SQR_SIZE))
 
     for x, y in snake.segments:
-        p.draw.rect(screen, p.Color("green"), (x*SQR_SIZE, y*SQR_SIZE, SQR_SIZE, SQR_SIZE))
+        p.draw.rect(screen, p.Color("blue"), (x*SQR_SIZE, y*SQR_SIZE, SQR_SIZE, SQR_SIZE))
 
     p.display.flip()
 
