@@ -3,16 +3,24 @@ import time
 from Snake import Snake
 from Food import Food
 from Menu import Menu
+from SoundManager import SoundManager
 
 WIDTH = 720
 HEIGHT = 720
-UI_HEIGHT = 80
+UI_HEIGHT = 60
 TOTAL_HEIGHT = HEIGHT + UI_HEIGHT
 SQUARES = 20 # macierz 20x20
 SQR_SIZE = HEIGHT // SQUARES
 
+
 def main():
     p.init()
+    p.mixer.init()
+    menu = Menu(WIDTH, HEIGHT)
+    sound = SoundManager(menu.settings)
+    menu.sound = sound
+    sound.play_music()
+
     screen = p.display.set_mode((WIDTH, TOTAL_HEIGHT))
     p.display.set_caption('Snake')
     clock = p.time.Clock()
@@ -20,15 +28,16 @@ def main():
     background = p.transform.scale(p.image.load("img/grid.jpg"), (WIDTH, HEIGHT))
     snakeTextures = loadSnakeTextures()
 
-    menu = Menu(WIDTH, HEIGHT)
-
     running = True
     while running:
         action = menu.showMain(screen, clock)
 
         if action == "PLAY":
-            score, playTime = runGame(screen, clock, foodImg, background, snakeTextures, menu)
+            score, playTime = runGame(screen, clock, foodImg, background, snakeTextures, menu, sound)
             menu.showGameOver(screen, clock, score, playTime)
+            if menu.settings.music:
+                sound.play_music()  # wznawia muzykę po Game Over, jeśli była włączona
+
         elif action == "SETTINGS":
             menu.showSettings(screen, clock)
         elif action == "EXIT":
@@ -36,7 +45,7 @@ def main():
 
     p.quit()
 
-def runGame(screen, clock, foodImg, background, snakeTextures, menu):
+def runGame(screen, clock, foodImg, background, snakeTextures, menu, sound):
     snake = Snake(SQUARES)
     food = Food(SQUARES, snake.segments)
     score = 0
@@ -67,7 +76,8 @@ def runGame(screen, clock, foodImg, background, snakeTextures, menu):
                 snake.shouldGrow = True
                 score = score + 1
                 food.respawn(snake.segments)
-
+                sound.apple_eaten()
+            
             headX, headY = snake.segments[0] # wall collision
             if headX < 0 or headX >= SQUARES or headY < 0 or headY >= SQUARES:
                 break
@@ -78,7 +88,8 @@ def runGame(screen, clock, foodImg, background, snakeTextures, menu):
         playTime = time.time() - startTime
         draw(screen, snake, food, foodImg, background, snakeTextures, menu, score, playTime, paused)
         clock.tick(menu.settings.fps)
-
+    
+    sound.game_over()
     return score, playTime
 
 def draw(screen, snake, food, foodImg, background, snakeTextures, menu, score, playTime, paused):
