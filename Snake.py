@@ -3,12 +3,13 @@ import random
 
 class Snake:
     def __init__(self, squares):
-        startX = random.randint(1, squares - 2)
-        startY = random.randint(1, squares - 2)
+        margin = 5
+        startX = random.randint(margin, squares - margin - 1)
+        startY = random.randint(margin, squares - margin - 1)
 
         self.segments = [(startX,     startY),
-                      (startX - 1, startY),
-                      (startX - 2, startY)]
+                         (startX - 1, startY),
+                         (startX - 2, startY)]
         
         self.direction = "RIGHT"
         self.shouldGrow = False
