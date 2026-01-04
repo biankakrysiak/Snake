@@ -6,8 +6,12 @@ class SoundManager:
 
         self.apple = p.mixer.Sound("sounds/appleEaten.wav")
         self.gameover = p.mixer.Sound("sounds/gameOver.wav")
+        self.laser = p.mixer.Sound("sounds/laser.wav")
+        self.kill = p.mixer.Sound("sounds/kill.mp3")
         self.apple.set_volume(0.1)
         self.gameover.set_volume(0.6)
+        self.laser.set_volume(0.1)
+        self.kill.set_volume(0.1)
 
         p.mixer.music.load("sounds/classicMusic.mp3")
         p.mixer.music.set_volume(0.1)
@@ -36,9 +40,16 @@ class SoundManager:
         if self.settings.sound:
             self.apple.play()
 
+    def laser_shot(self):
+        if self.settings.sound:
+            self.laser.play()
+    
+    def mongoose_killed(self):
+        if self.settings.sound:
+            self.kill.play()
+
     def game_over(self):
         if self.settings.sound:
-            # Pauzujemy muzykę tylko podczas odtwarzania dźwięku Game Over
             if self.settings.music and p.mixer.music.get_busy():
                 p.mixer.music.pause()
                 self.music_was_playing = True
