@@ -4,6 +4,8 @@ from Snake import Snake
 from Food import Food
 from Menu import Menu
 from SoundManager import SoundManager
+from Laser import Laser
+from Mongoose import Mongoose
 
 WIDTH = 720
 HEIGHT = 720
@@ -27,16 +29,20 @@ def main():
     foodImg = p.transform.scale(p.image.load("img/food.png"), (SQR_SIZE,SQR_SIZE))
     background = p.transform.scale(p.image.load("img/grid.jpg"), (WIDTH, HEIGHT))
     snakeTextures = loadSnakeTextures()
+    mongooseImg = p.transform.scale(p.image.load("img/mongoose.png"), (SQR_SIZE, SQR_SIZE))
+    laserImg = p.transform.scale(p.image.load("img/laser.png"), (SQR_SIZE, SQR_SIZE))
+
 
     running = True
     while running:
         action = menu.showMain(screen, clock)
 
         if action == "PLAY":
-            score, playTime = runGame(screen, clock, foodImg, background, snakeTextures, menu, sound)
+            score, playTime = runGame(screen, clock, foodImg, background, snakeTextures, 
+                                      menu, sound, mongooseImg, laserImg)
             menu.showGameOver(screen, clock, score, playTime)
             if menu.settings.music:
-                sound.play_music()  # wznawia muzykę po Game Over, jeśli była włączona
+                sound.play_music()  # music in main menu after game over (if it was turned on)
 
         elif action == "SETTINGS":
             menu.showSettings(screen, clock)
@@ -45,12 +51,17 @@ def main():
 
     p.quit()
 
-def runGame(screen, clock, foodImg, background, snakeTextures, menu, sound):
+def runGame(screen, clock, foodImg, background, snakeTextures, menu, sound, mongooseImg, laserImg):
     snake = Snake(SQUARES)
     food = Food(SQUARES, snake.segments)
     score = 0
     startTime = time.time()
     paused = False
+    pause_btn = None
+    
+    mongooses = []
+    lasers = []
+    mongooseSpawn = 2
     
     running = True
     while running:
@@ -59,7 +70,7 @@ def runGame(screen, clock, foodImg, background, snakeTextures, menu, sound):
                 return score, time.time() - startTime
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_ESCAPE or e.key == p.K_p:
-                    paused = not paused
+                    paused = not paused 
                 elif not paused:
                     if e.key == p.K_UP and snake.direction != "DOWN":
                         snake.direction = "UP"
@@ -69,6 +80,24 @@ def runGame(screen, clock, foodImg, background, snakeTextures, menu, sound):
                         snake.direction = "LEFT"
                     elif e.key == p.K_RIGHT and snake.direction != "LEFT":
                         snake.direction = "RIGHT"
+                    elif e.key == p.K_x and menu.settings.game_mode == "Advanced":
+                        laser = Laser(snake.segments[0], snake.direction, SQUARES)
+                        lasers.append(laser)
+                        sound.laser_shot()
+            elif e.type == p.MOUSEBUTTONDOWN and e.button == 1:
+                if pause_btn and pause_btn.collidepoint(p.mouse.get_pos()):
+                    paused = not paused
+                mx, my = p.mouse.get_pos()
+                if my <= UI_HEIGHT:
+                    if mx >= WIDTH - 110 and mx <= WIDTH - 70:
+                        menu.settings.music = not menu.settings.music
+                        if menu.settings.music:
+                            sound.play_music()
+                        else:
+                            sound.stop_music()
+                    elif mx >= WIDTH - 60 and mx <= WIDTH - 20:
+                        menu.settings.sound = not menu.settings.sound
+
         if not paused:
             snake.move()    
 
@@ -77,33 +106,91 @@ def runGame(screen, clock, foodImg, background, snakeTextures, menu, sound):
                 score = score + 1
                 food.respawn(snake.segments)
                 sound.apple_eaten()
+                if menu.settings.game_mode == "Advanced":
+                    if score % mongooseSpawn == 0 and score > 0:
+                        mongoose = Mongoose(SQUARES, snake.segments)
+                        mongooses.append(mongoose)
+
             
-            headX, headY = snake.segments[0] # wall collision
-            if headX < 0 or headX >= SQUARES or headY < 0 or headY >= SQUARES:
-                break
+            headX, headY = snake.segments[0] 
+            if menu.settings.game_mode == "Advanced":
+                headX %= SQUARES
+                headY %= SQUARES
+                snake.segments[0] = (headX, headY)
+                
+                # mongoose collision
+                for mongoose in mongooses:
+                    if snake.segments[0] == mongoose.position:
+                        running = False
+                        break
+                
+                # move and check lasers
+                for laser in lasers[:]:
+                    # laser speed 3x
+                    for _ in range(3):
+                        if laser.active:
+                            laser.move()
+                            
+                            # check if laser hits mongoose po każdym ruchu
+                            for mongoose in mongooses[:]:
+                                if laser.pos == mongoose.position:
+                                    mongooses.remove(mongoose)
+                                    laser.active = False
+                                    sound.mongoose_killed()
+                                    break
+                            
+                            # check if laser hits snake body
+                            if laser.active and laser.pos in snake.segments[1:]:
+                                running = False
+                                laser.active = False
+                                break
+
+                    if not laser.active:
+                        lasers.remove(laser)
+                if not running:
+                    break
+
+            else:  # wall collision
+                if headX < 0 or headX >= SQUARES or headY < 0 or headY >= SQUARES:
+                    break
 
             if snake.segments[0] in snake.segments[1:]: # snake collision
                 running = False
 
         playTime = time.time() - startTime
-        draw(screen, snake, food, foodImg, background, snakeTextures, menu, score, playTime, paused)
-        clock.tick(menu.settings.fps)
+        pause_btn = draw(screen, snake, food, foodImg, background, snakeTextures, menu, score, playTime, paused, mongooses, mongooseImg, lasers, laserImg)
+        fps = menu.settings.fps
+        if menu.settings.game_mode == "Advanced":
+            fps = 4 + score // 2
+            fps = min(fps, 14)
+        clock.tick(fps)
     
     sound.game_over()
     return score, playTime
 
-def draw(screen, snake, food, foodImg, background, snakeTextures, menu, score, playTime, paused):
+def draw(screen, snake, food, foodImg, background, snakeTextures, menu, score, playTime, paused, mongooses, mongooseImg, lasers, laserImg):
     screen.fill((30, 30, 40))
     screen.blit(background, (0, UI_HEIGHT))
 
     fx, fy = food.position
     screen.blit(foodImg, (fx*SQR_SIZE, fy*SQR_SIZE + UI_HEIGHT))
 
+    for mongoose in mongooses:
+        mongoose.draw(screen, mongooseImg, UI_HEIGHT, SQR_SIZE)
+    
+    for laser in lasers:
+        lx, ly = laser.pos
+        lx = lx % SQUARES
+        ly = ly % SQUARES
+        laserRotated = rotateByDirection(laserImg, laser.direction)
+        screen.blit(laserRotated, (lx*SQR_SIZE, ly*SQR_SIZE + UI_HEIGHT))
+
     drawSnake(screen, snake, snakeTextures, UI_HEIGHT)
 
-    menu.drawUI(screen, score, playTime, len(snake.segments), paused, UI_HEIGHT)
-
+    pause_btn = menu.drawUI(screen, score, playTime, len(snake.segments), paused, UI_HEIGHT)
+    
     p.display.flip()
+    return pause_btn
 
 def drawSnake(screen, snake, textures, yOffset):
     segments = snake.segments
@@ -146,23 +233,27 @@ def getVector(a, b):
 def rotateByDirection(image, direction):
     if direction == "RIGHT":
         return image
-    if direction == "DOWN":
-        return p.transform.rotate(image, -90)
-    if direction == "LEFT":
+    elif direction == "DOWN":
+       return p.transform.rotate(image, -90)
+    elif direction == "LEFT":
         return p.transform.rotate(image, 180)
-    if direction == "UP":
+    elif direction == "UP":
         return p.transform.rotate(image, 90)
+    else:
+        return image
 
 def rotateByVector(image, vec):
     if vec == (1, 0):
         return image
-    if vec == (-1, 0):
+    elif vec == (-1, 0):
         return p.transform.rotate(image, 180)
-    if vec == (0, 1):
+    elif vec == (0, 1):
         return p.transform.rotate(image, -90)
-    if vec == (0, -1):
+    elif vec == (0, -1):
         return p.transform.rotate(image, 90)
-    
+    else:
+        return image
+
 def rotateTurn(image, dPrev, dNext):
     pair = (dPrev, dNext)
     if pair in [((0,1),(1,0)), ((1,0),(0,1))]: # up -> right
