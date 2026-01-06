@@ -4,12 +4,12 @@ class Laser:
         self.direction = direction
         self.squares = squares
         self.active = True
-        self.wrapped = False # border checks
+        self.wrapped = False  # track if laser crossed border once
 
     def move(self):
         x, y = self.pos
-        old_x, old_y = x, y
         
+        # move laser in its direction
         if self.direction == "UP":
             y -= 1
         elif self.direction == "DOWN":
@@ -19,14 +19,14 @@ class Laser:
         elif self.direction == "RIGHT":
             x += 1
         
-        # checks if laser went trough the border
+        # handle border crossing (wrapping)
         if x < 0 or x >= self.squares or y < 0 or y >= self.squares:
             if self.wrapped:
-                # if the laser already went through it once, delete it
+                # laser already wrapped once, deactivate it
                 self.active = False
                 return
             else:
-                # first crossing with the border
+                # first wrap, allow it to continue
                 self.wrapped = True
                 x = x % self.squares
                 y = y % self.squares

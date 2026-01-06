@@ -6,10 +6,12 @@ class Food:
         self.position = self.randomPosition(snakeSegments)
 
     def randomPosition(self, snakeSegments):
+        # find random position that doesn't overlap with snake
         while True:
             position = (random.randint(0, self.squares - 1), random.randint(0, self.squares - 1))
             if position not in snakeSegments:
                 return position
             
     def respawn(self, snakeSegments):
+        # generate new position when food is eaten
         self.position = self.randomPosition(snakeSegments)
