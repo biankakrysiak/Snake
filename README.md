@@ -1,6 +1,6 @@
 # Snake
 
-A Snake game built with **Python** and **pygame**, with two game modes, animated snake textures, sound effects, background music, and enemy AI.
+A Snake game built with **Python** and **pygame**, with two game modes, animated snake textures, sound effects, background music, and enemies.
 
 ---
 
