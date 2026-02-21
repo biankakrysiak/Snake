@@ -23,7 +23,7 @@ A Snake game built with **Python** and **pygame**, with two game modes, animated
 The traditional Snake experience. Eat apples to grow longer, avoid the walls, and don't run into yourself. Difficulty controls the snake's speed (Easy / Normal / Hard).
 
 ### Advanced
-A more chaotic version with no walls. The snake wraps around the borders instead. As your score increases, **mongooses** spawn on the grid and chase you. Press **X** to shoot a laser in the direction you're facing to eliminate them. Watch out: lasers wrap around the grid too, and hitting your own body with one ends the game. Speed increases dynamically with your score.
+A more chaotic version with no walls. The snake wraps around the borders instead. As your score increases, **mongooses** spawn on the grid. Press **X** to shoot a laser in the direction you're facing to eliminate them. Watch out: lasers wrap around the grid too, and hitting your own body with one ends the game. Speed increases dynamically with your score.
 
 ---
 
